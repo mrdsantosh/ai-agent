@@ -19,15 +19,17 @@ public class ChatService {
 			1. Use markdown tables for structured data
 			2. If unsure, say "I don't know"
 			""";
+	private final ChatMemoryService chatMemoryService;
 
-	public ChatService(ChatClient.Builder chatClientBuilder) {
+	public ChatService(ChatClient.Builder chatClientBuilder, ChatMemoryService chatMemoryService) {
 		this.chatClient = chatClientBuilder.defaultSystem(SYSTEM_PROMPT).build();
+		this.chatMemoryService = chatMemoryService;
 	}
 
 	public Flux<String> processChat(String prompt) {
-		logger.info("Processing streaming chat request - prompt: '{}'", prompt);
+		logger.info("Processing chat: '{}'", prompt);
 		try {
-			return chatClient.prompt().user(prompt).stream().content();
+			return chatMemoryService.callWithMemory(chatClient, prompt);
 		} catch (Exception e) {
 			logger.error("Error processing streaming chat request", e);
 			return Flux.just("I don't know - there was an error processing your request.");
