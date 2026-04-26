@@ -12,9 +12,16 @@ public class ChatService {
 	private static final Logger logger = LoggerFactory.getLogger(ChatService.class);
 
 	private final ChatClient chatClient;
+	public static final String SYSTEM_PROMPT = """
+			You are a helpful AI Agent for travel and expenses.
+
+			Guidelines:
+			1. Use markdown tables for structured data
+			2. If unsure, say "I don't know"
+			""";
 
 	public ChatService(ChatClient.Builder chatClientBuilder) {
-		this.chatClient = chatClientBuilder.build();
+		this.chatClient = chatClientBuilder.defaultSystem(SYSTEM_PROMPT).build();
 	}
 
 	public Flux<String> processChat(String prompt) {
