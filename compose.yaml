@@ -19,3 +19,23 @@ services:
       - '5050:80'
     depends_on:
       - postgres
+
+  prometheus:
+    container_name: ai-agent-prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+    depends_on:
+      - postgres
+  
+  grafana:
+    container_name: ai-agent-grafana
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
