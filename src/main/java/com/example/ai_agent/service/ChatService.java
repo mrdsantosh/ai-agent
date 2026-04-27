@@ -3,6 +3,9 @@ package com.example.ai_agent.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Flux;
@@ -21,8 +24,10 @@ public class ChatService {
 			""";
 	private final ChatMemoryService chatMemoryService;
 
-	public ChatService(ChatClient.Builder chatClientBuilder, ChatMemoryService chatMemoryService) {
-		this.chatClient = chatClientBuilder.defaultSystem(SYSTEM_PROMPT).build();
+	public ChatService(ChatClient.Builder chatClientBuilder, ChatMemoryService chatMemoryService, @NonNull VectorStore vectorStore) {
+		this.chatClient = chatClientBuilder.defaultSystem(SYSTEM_PROMPT)
+		.defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())  // RAG for policies
+		.build();
 		this.chatMemoryService = chatMemoryService;
 	}
 

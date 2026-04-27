@@ -11,7 +11,8 @@
         tailwind.config = { darkMode: 'class' }
     </script>
 </head>
-<body class="bg-white dark:bg-gray-900 min-h-screen text-gray-800 dark:text-slate-200 transition-colors duration-300">
+<body class="bg-white dark:bg-gray-900 min-h-screen text-gray-800 dark:text-slate-200 transition-colors duration-300"
+      th:data-multi-modal="${multiModalEnabled}">
     <div class="container mx-auto px-4 py-8">
         <!-- ========== BASE: Header ========== -->
         <header class="mb-8">
@@ -53,13 +54,18 @@
             <!-- BASE: Input Area -->
             <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-auto">
                 <form id="chatForm" class="flex w-full">
-                    <!-- UPLOAD: File Input and Button -->
-                    <input type="file" id="fileInput" class="hidden" accept=".jpg,.jpeg,.png">
-                    <button th:if="${multiModalEnabled}" type="button" id="fileButton" class="bg-indigo-500 text-white px-4 py-3 rounded-l-lg hover:bg-indigo-600 transition flex items-center justify-center">
+                    <!-- RAG + UPLOAD: hidden file input (images when multimodal; documents → rag-load) -->
+                    <input type="file" id="fileInput" class="hidden" multiple
+                           th:attr="accept=${multiModalEnabled ? 'image/jpeg,image/png,image/gif,image/webp,.txt,.md,.markdown,.pdf,.csv,.json,.html,.htm,.xml,.log,.yaml,.yml' : '.txt,.md,.markdown,.pdf,.csv,.json,.html,.htm,.xml,.log,.yaml,.yml,text/plain'}">
+                    <div id="ragDropZone" role="button" tabindex="0"
+                         class="rag-drop-zone bg-indigo-500 text-white px-4 py-3 rounded-l-lg hover:bg-indigo-600 transition flex items-center justify-center cursor-pointer flex-shrink-0 border border-indigo-500 border-r-0"
+                         title="Load documents into knowledge base (click or drop)">
                         📎
-                    </button>
+                    </div>
                     <!-- BASE: Text Input -->
-                    <input type="text" id="userInput" th:class="${multiModalEnabled} ? 'flex-grow bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 dark:text-slate-200' : 'flex-grow bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 dark:text-slate-200'" placeholder="Please ask your question...">
+                    <input type="text" id="userInput"
+                           class="flex-grow bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 dark:text-slate-200"
+                           placeholder="Please ask your question...">
                     <!-- BASE: Send Button -->
                     <button type="submit" class="bg-indigo-500 text-white px-6 py-3 rounded-r-lg hover:bg-indigo-600 transition">Send</button>
                 </form>
@@ -88,7 +94,8 @@
             const userInput = document.getElementById('userInput');
             const themeToggle = document.getElementById('themeToggle');
             const fileInput = document.getElementById('fileInput');
-            const fileButton = document.getElementById('fileButton');
+            const ragDropZone = document.getElementById('ragDropZone');
+            const multiModalEnabled = document.body.getAttribute('data-multi-modal') === 'true';
 
             // ========== BASE: Chat Form Submit ==========
             chatForm.addEventListener('submit', async function(e) {
@@ -293,26 +300,118 @@
             let currentFileBase64 = null;
             let currentFileName = null;
 
-            // ========== UPLOAD: File Upload Handler ==========
-            if (fileButton) {
-                fileButton.addEventListener('click', function() {
-                    fileInput.click();
+            // ========== RAG: Load documents via api/admin/rag-load ==========
+            async function uploadDocumentsToRag(files) {
+                const list = Array.from(files).filter(Boolean);
+                for (const file of list) {
+                    if (multiModalEnabled && file.type.startsWith('image/')) {
+                        continue;
+                    }
+                    const loadingId = showLoading();
+                    try {
+                        const text = await readFileAsTextForRag(file);
+                        const response = await fetch('api/admin/rag-load', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                            body: text
+                        });
+                        removeLoading(loadingId);
+                        if (!response.ok) {
+                            throw new Error('Server returned ' + response.status);
+                        }
+                        addMessage('Added document "' + escapeHtml(file.name) + '" to the knowledge base (' + text.length + ' characters).', 'ai');
+                    } catch (error) {
+                        removeLoading(loadingId);
+                        console.error('RAG load error:', error);
+                        addMessage('Could not load "' + escapeHtml(file.name) + '": ' + escapeHtml(error.message || String(error)), 'ai');
+                    }
+                }
+            }
+
+            function readFileAsTextForRag(file) {
+                if (file.type === 'application/pdf') {
+                    return Promise.reject(new Error('PDF text extraction is not supported in the browser; use a .txt or .md file, or add server-side PDF parsing.'));
+                }
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('Failed to read file'));
+                    reader.readAsText(file);
                 });
             }
 
-            if (fileInput) {
-                fileInput.addEventListener('change', async function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
+            function openAttachPicker() {
+                fileInput.click();
+            }
+
+            if (ragDropZone && fileInput) {
+                ragDropZone.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openAttachPicker();
+                });
+                ragDropZone.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openAttachPicker();
+                    }
+                });
+
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(ev) {
+                    ragDropZone.addEventListener(ev, function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                ragDropZone.addEventListener('dragover', function() {
+                    ragDropZone.classList.add('drag-over');
+                });
+                ragDropZone.addEventListener('dragleave', function(e) {
+                    if (!ragDropZone.contains(e.relatedTarget)) {
+                        ragDropZone.classList.remove('drag-over');
+                    }
+                });
+                ragDropZone.addEventListener('drop', async function(e) {
+                    ragDropZone.classList.remove('drag-over');
+                    const dt = e.dataTransfer;
+                    if (!dt || !dt.files || dt.files.length === 0) return;
+                    await handleAttachFiles(dt.files);
+                });
+            }
+
+            async function handleAttachFiles(fileList) {
+                const files = Array.from(fileList);
+                if (files.length === 0) return;
+
+                const images = files.filter(function(f) { return f.type.startsWith('image/'); });
+                const ragFiles = files.filter(function(f) { return !f.type.startsWith('image/'); });
+
+                for (const file of ragFiles) {
+                    await uploadDocumentsToRag([file]);
+                }
+
+                if (!multiModalEnabled && images.length > 0) {
+                    addMessage('Image upload is not enabled. Use text documents (e.g. .txt, .md) for the knowledge base.', 'ai');
+                } else if (multiModalEnabled) {
+                    for (const file of images) {
                         try {
                             currentFileBase64 = await fileToBase64(file);
                             currentFileName = file.name;
                             addImageMessage(file);
                             await sendDocumentAnalysis();
                         } catch (error) {
-                            console.error('Error processing file:', error);
-                            addMessage('Error processing file. Please try again.', 'ai');
+                            console.error('Error processing image:', error);
+                            addMessage('Error processing image. Please try again.', 'ai');
                         }
+                    }
+                }
+
+                fileInput.value = '';
+            }
+
+            if (fileInput) {
+                fileInput.addEventListener('change', async function(e) {
+                    if (e.target.files && e.target.files.length > 0) {
+                        await handleAttachFiles(e.target.files);
                     }
                 });
             }
@@ -544,6 +643,13 @@
         .message-bubble-ai:hover .copy-button,
         .message-bubble-user:hover .copy-button {
             opacity: 1;
+        }
+
+        /* ========== RAG: Attachment drop zone ========== */
+        .rag-drop-zone.drag-over {
+            outline: 2px solid #a5b4fc;
+            outline-offset: 2px;
+            background: #4f46e5 !important;
         }
 
         /* ========== UPLOAD: Image Modal ========== */
