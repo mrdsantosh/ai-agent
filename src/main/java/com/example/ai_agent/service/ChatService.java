@@ -8,6 +8,9 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
+import com.example.ai_agent.tool.DateTimeService;
+import com.example.ai_agent.tool.WeatherService;
+
 import reactor.core.publisher.Flux;
 
 @Service
@@ -24,10 +27,12 @@ public class ChatService {
 			""";
 	private final ChatMemoryService chatMemoryService;
 
-	public ChatService(ChatClient.Builder chatClientBuilder, ChatMemoryService chatMemoryService, @NonNull VectorStore vectorStore) {
+	public ChatService(ChatClient.Builder chatClientBuilder, ChatMemoryService chatMemoryService,
+			@NonNull VectorStore vectorStore, DateTimeService dateTimeService, WeatherService weatherService) {
 		this.chatClient = chatClientBuilder.defaultSystem(SYSTEM_PROMPT)
-		.defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())  // RAG for policies
-		.build();
+				.defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build()) // RAG for policies
+				.defaultTools(dateTimeService, weatherService) // Custom tools
+				.build();
 		this.chatMemoryService = chatMemoryService;
 	}
 

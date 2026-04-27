@@ -47,6 +47,11 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-model-ollama</artifactId>
 		</dependency>
+		<!-- WebClient for HTTP calls -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webflux</artifactId>
+		</dependency>
 		<!-- JDBC Memory -->
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
