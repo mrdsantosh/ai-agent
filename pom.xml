@@ -52,6 +52,11 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webflux</artifactId>
 		</dependency>
+		<!-- MCP Client -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-client</artifactId>
+		</dependency>
 		<!-- JDBC Memory -->
 		<dependency>
 			<groupId>org.springframework.ai</groupId>

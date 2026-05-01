@@ -1,6 +1,6 @@
-# AI Agent — Travel & Expenses Assistant
+# AI Agent — Banking Assistant
 
-A conversational AI agent specialised in travel and expenses, built with Spring AI and a locally-running Ollama LLM. The agent maintains multi-tier persistent memory across conversations so it can recall user preferences and prior context on every session.
+A conversational AI agent specialised in banking, built with Spring AI and a locally-running Ollama LLM. The agent maintains multi-tier persistent memory across conversations so it can recall user preferences and prior context on every session.
 
 ---
 
