@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "ai-agent-postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "ai_agent_db",
+      "Username": "postgres",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+    }
+  }
+}

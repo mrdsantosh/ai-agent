@@ -1,41 +1,51 @@
+---
 services:
   postgres:
     container_name: ai-agent-postgres
-    image: 'pgvector/pgvector:pg16'
+    image: pgvector/pgvector:pg16
     environment:
-      - 'POSTGRES_DB=ai_agent_db'
-      - 'POSTGRES_PASSWORD=postgres'
-      - 'POSTGRES_USER=postgres'
+      - POSTGRES_DB=ai_agent_db
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
     ports:
-      - '5432:5432'
-
+      - 5432:5432
   pgadmin:
     container_name: ai-agent-pgadmin
-    image: 'dpage/pgadmin4:latest'
+    image: dpage/pgadmin4:latest
     environment:
-      - 'PGADMIN_DEFAULT_EMAIL=admin@admin.com'
-      - 'PGADMIN_DEFAULT_PASSWORD=admin'
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_SERVER_JSON_FILE=/pgadmin4/servers.json
     ports:
-      - '5050:80'
+      - 5050:80
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./docker/pgadmin/pgpass:/pgpass:ro
     depends_on:
       - postgres
-
   prometheus:
-    container_name: ai-agent-prometheus
+    container_name: prometheus
     image: prom/prometheus:latest
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - '9090:9090'
+      - 9090:9090
     depends_on:
       - postgres
-  
   grafana:
-    container_name: ai-agent-grafana
+    container_name: grafana
     image: grafana/grafana:latest
     environment:
+      - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/ai-metrics-dashboard.json
     ports:
-      - '3000:3000'
+      - 3000:3000
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/etc/grafana/dashboards
     depends_on:
       - prometheus
+volumes:
+  grafana-storage: null

@@ -15,6 +15,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Flux;
@@ -49,6 +50,10 @@ public class ChatMemoryService {
 	}
 
 	public Flux<String> callWithMemory(ChatClient chatClient, String prompt) {
+		return callWithMemory(chatClient, prompt, null);
+	}
+
+	public Flux<String> callWithMemory(ChatClient chatClient, String prompt, ToolCallback[] additionalTools) {
 		String conversationId = getCurrentConversationId();
 
 		// 1. Auto-load previous context on first message
@@ -61,8 +66,11 @@ public class ChatMemoryService {
 
 		// 3. Stream AI response with full conversation history
 		StringBuilder fullResponse = new StringBuilder();
-		return chatClient.prompt(new Prompt(sessionMemory.get(conversationId))).stream().content()
-				.doOnNext(fullResponse::append).doOnComplete(() -> {
+		var spec = chatClient.prompt(new Prompt(sessionMemory.get(conversationId)));
+		if (additionalTools != null && additionalTools.length > 0) {
+			spec = spec.toolCallbacks(additionalTools);
+		}
+		return spec.stream().content().doOnNext(fullResponse::append).doOnComplete(() -> {
 					// 4. Save complete response to session memory
 					String responseText = fullResponse.toString();
 					if (!responseText.isEmpty()) {
