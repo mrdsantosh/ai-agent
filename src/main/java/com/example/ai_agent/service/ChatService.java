@@ -20,7 +20,7 @@ public class ChatService {
 	private final ChatClient chatClient;
 	public static final String SYSTEM_PROMPT = """
 			You are a helpful AI Agent.
-
+			
 			Guidelines:
 			1. Use markdown tables for structured data
 			2. If unsure, say "I don't know"
