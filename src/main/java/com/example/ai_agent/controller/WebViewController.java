@@ -7,16 +7,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class WebViewController {
-	@Value("${ui.features.multi-user:true}")
-	private boolean multiUserEnabled;
+  @Value("${ui.features.multi-user:true}")
+  private boolean multiUserEnabled;
 
-	@Value("${ui.features.multi-modal:false}")
-	private boolean multiModalEnabled;
+  @Value("${ui.features.multi-modal:false}")
+  private boolean multiModalEnabled;
 
-	@GetMapping("/")
-	public String index(Model model) {
-		model.addAttribute("multiUserEnabled", multiUserEnabled);
-		model.addAttribute("multiModalEnabled", multiModalEnabled);
-		return "chat";
-	}
+  @GetMapping("/")
+  public String index(Model model) {
+    model.addAttribute("multiUserEnabled", multiUserEnabled);
+    model.addAttribute("multiModalEnabled", multiModalEnabled);
+    return "chat";
+  }
 }

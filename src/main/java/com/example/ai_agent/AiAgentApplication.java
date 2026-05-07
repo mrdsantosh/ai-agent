@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class AiAgentApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(AiAgentApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(AiAgentApplication.class, args);
+  }
 
 }

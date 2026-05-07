@@ -10,14 +10,14 @@ import com.example.ai_agent.service.VectorStoreService;
 @RestController
 @RequestMapping("api/admin")
 public class VectorStoreController {
-	private final VectorStoreService vectorStoreService;
+  private final VectorStoreService vectorStoreService;
 
-	public VectorStoreController(VectorStoreService vectorStoreService) {
-		this.vectorStoreService = vectorStoreService;
-	}
+  public VectorStoreController(VectorStoreService vectorStoreService) {
+    this.vectorStoreService = vectorStoreService;
+  }
 
-	@PostMapping("rag-load")
-	public void loadDataToVectorStore(@RequestBody String content) {
-		vectorStoreService.addContent(content);
-	}
+  @PostMapping("rag-load")
+  public void loadDataToVectorStore(@RequestBody String content) {
+    vectorStoreService.addContent(content);
+  }
 }
